@@ -14,49 +14,82 @@ struct sockaddr_in serv_addr, cli_addr;
 char buffer[256];
 char dbase1[2000];
 char dbase2[2000];
+int res1,res2;
+char auth_cl;
 
-FILE* db1;
-FILE* db2;
+FILE* db1; // marks
+FILE* db2; // user pass
+
+void closing() {
+    if (status&1) {close(sockfd);}
+    if (status&8) {close(newsockfd);}
+    if (status&4) {
+        fclose(db1);
+        fclose(db2);
+    }
+}
+
+void error(const char *msg)
+{
+    perror(msg);
+    closing();
+    exit(1);
+}
 
 void adduser(char* username,char* password,char auth) {
     char buff[41];
     bzero(buff,41);
     int n=strlen(username);
     if (n>19) {
-        perror("limit exceeded");
+        error("limit exceeded");
     }
     memcpy(buff,username,n);
-    int n=strlen(password);
+    n=strlen(password);
     if (n>19) {
-        perror("limit exceeded");
+        error("limit exceeded");
     }
-    memcpy(buff+20,username,n);
+    memcpy(buff+20,password,n);
     buff[40]=auth;
-    fwrite(buff,41,1,db1);
+    fwrite(buff,41,1,db2);
+    memcpy(dbase2+res2,buff,41);
+    res2+=41;
 }
 
-void addstudent(char* name,float s1,float s2,float s3,float s4,float s5) {
+int addstudent(char* name,float s1,float s2,float s3,float s4,float s5) {
     char buff[41];
     bzero(buff,41);
     int n=strlen(name);
     if (n>19) {
-        perror("limit exceeded");
+        error("limit exceeded");
     }
     memcpy(buff,name,n);
 
-    short xs1=htons(round(s1*100));
-    memcpy(buff+30,&xs1,2);
-    short xs2=htons(round(s2*100));
-    memcpy(buff+32,&xs2,2);
-    short xs3=htons(round(s3*100));
-    memcpy(buff+34,&xs1,2);
-    short xs4=htons(round(s4*100));
-    memcpy(buff+36,&xs1,2);
-    short xs5=htons(round(s5*100));
-    memcpy(buff+38,&xs1,2);
-    char auth = 
+    short xs=s1*100;
+    xs=htons(xs);
+    memcpy(buff+30,&xs,2);
+
+    xs=s2*100;
+    xs=htons(xs);
+    memcpy(buff+32,&xs,2);
+
+    xs=s3*100;
+    xs=htons(xs);
+    memcpy(buff+34,&xs,2);
+
+    xs=s4*100;
+    xs=htons(xs);
+    memcpy(buff+36,&xs,2);
+
+    xs=s5*100;
+    xs=htons(xs);
+    memcpy(buff+38,&xs,2);
+
+    char auth = 1+(res1/41);
     buff[40]=auth;
     fwrite(buff,41,1,db1);
+    memcpy(dbase1+res1,buff,41);
+    res1+=41;
+    return auth;
 }
 
 void update(FILE* fp,int n,char change[]) {
@@ -74,27 +107,59 @@ void decrypt(char password[],int key){
     }
 }
 
-void closing() {
-    if (status&1) {close(sockfd);}
-    if (status&2) {close(newsockfd);}
-    if (status&4) {
-        fclose(db1);
-        fclose(db2);
-    }
-
+void commands() {
+    "y";
 }
 
-void error(const char *msg)
-{
-    perror(msg);
-    closing();
-    exit(1);
+int search(char* username) {
+    int x=0;
+    while (x<res2) {
+        if (strcmp(dbase2+x,username)==0){
+            return x;
+        }
+        x+=41;
+    }
+    return -1;
 }
 
 bool checker(char* username) {
     char* ptr;
+    int n = search(username);
+    if (n<0) {
+        write(newsockfd,&n,4);
+        status^=8;
+        close(newsockfd);
+        return false;
+    }
     char x=0xff;
-    write(newsockfd,&x,1);
+    int key; //make a random number
+    char pass[20];
+    memcpy(pass,dbase2+n+20,20);
+    key&=(1<<24)-1;
+    encrypt(pass,key);
+    key=htonl(key);
+    int snt = write(newsockfd,&key,4);
+    if (snt<0){
+        error("error on sending");
+    }
+    bzero(buffer,256);
+    n = read(newsockfd,buffer,255);
+    if (n < 0) error("ERROR reading from socket");
+    if (strcmp(pass,buffer)!=0) {
+        n=-1;
+        write(newsockfd,&n,4);
+        status^=8;
+        close(newsockfd);
+        return false;
+    }
+    status|=16;
+    auth_cl=dbase2[n+40]; //if ch=-1 (int) ch == ?
+    if (auth_cl&(-16)==(-16)) {
+        sendall();
+    }
+    else {
+        sendone();
+    }
     return true;
 }
 
@@ -106,28 +171,31 @@ void connection() {
     if (newsockfd < 0) 
         error("ERROR on accept");
     bzero(buffer,256);
-    status=3;
+    status|=8;
 }
 
 void server() {
     bool run=true;
     char s;
     while (run) {
-        switch (status) {
-            case (2):
+        switch (status>>3) {
+            case (0):
             connection();
             break;
-            case (3):
+            case (1):
             checker(buffer); // need to change
             break;
+            case(3):
+            commands();
+            break;
+            default:
+            error("Something went wrong");
         }
         while ((s=getchar())!=EOF) {
             if (s=='e') run=false;
         }
     }
     closing();
-    // close(newsockfd);
-    // close(sockfd);
 }
 
 void userview() {
@@ -168,45 +236,28 @@ int main(int argc, char *argv[])
     printf("Server is ON\n");
     status|=2;  // need to check
 
-    db1 = fopen("student_marks","a+b");
+    db1 = fopen("student_marks","r+b");
     if (db1==NULL) {
-        perror("Error in loading database");
+        error("Error in loading database");
     }
-    db2 = fopen("user_pass","a+b");
+    db2 = fopen("user_pass","r+b");
     if (db2==NULL){
         fclose(db1);
-        perror("Error in loading database");
+        error("Error in loading database");
     }
     fseek(db1, 0L, SEEK_END);
-    int res1 = ftell(db1);
+    res1 = ftell(db1);
     fseek(db1, 0L, SEEK_SET);
     fread(dbase1,res1,1,db1);
     fseek(db2, 0L, SEEK_END);
-    int res2 = ftell(db2);
+    res2 = ftell(db2);
     fseek(db2, 0L, SEEK_SET);
     fread(dbase2,res2,1,db2);
-    printf("Database is loaded\n");
     status|=4;
 
-    server();
-    
+    // adduser("instructor2","adminpass2",-2);
+    // addstudent("K Dinesh Reddy",99.05,98.61,90.86,99.99,96.30);
+    //server();
+    closing();
     return 0; 
 }
-/*
-if (remove("abc.txt") == 0)
-    printf("Deleted successfully");
-else
-    printf("Unable to delete the file");
-*/
-
-// int convert(unsigned char* up) {
-//     int x=0;
-//     x=(*up)>>4;
-//     x*=10;
-//     x+=((*up)&15);
-//     up++;
-//     x=(*up)>>4;
-//     x*=10;
-//     x+=((*up)&15);
-//     return x;
-// }

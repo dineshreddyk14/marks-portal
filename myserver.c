@@ -92,9 +92,9 @@ int addstudent(char* name,float s1,float s2,float s3,float s4,float s5) {
     return auth;
 }
 
-void update(FILE* fp,int n,char change[]) {
+// void update(FILE* fp,int n,char change[]) {
 
-}
+// }
 
 void encrypt(char password[],int key){
     for (int i=0;i<strlen(password);i++) {
@@ -113,7 +113,9 @@ void commands() {
 
 int search(char* username) {
     int x=0;
+    printf("search start");
     while (x<res2) {
+        printf("%s %s %d",dbase2+x,username,strcmp(dbase2+x,username));
         if (strcmp(dbase2+x,username)==0){
             return x;
         }
@@ -122,17 +124,20 @@ int search(char* username) {
     return -1;
 }
 
-bool checker(char* username) {
-    char* ptr;
-    int n = search(username);
+bool checker() {
+    int rnd=read(newsockfd,buffer,20);
+    if (rnd<0){error("error while reading");return false;}
+    printf("%s",buffer);
+    int n = search(buffer);
     if (n<0) {
         write(newsockfd,&n,4);
         status^=8;
         close(newsockfd);
         return false;
     }
+    printf("search complete");
     char x=0xff;
-    int key; //make a random number
+    int key=11; //make a random number
     char pass[20];
     memcpy(pass,dbase2+n+20,20);
     key&=(1<<24)-1;
@@ -142,10 +147,13 @@ bool checker(char* username) {
     if (snt<0){
         error("error on sending");
     }
+    printf("send complete");
+    fflush(stdout);
     bzero(buffer,256);
-    n = read(newsockfd,buffer,255);
+    n = read(newsockfd,buffer,20);
     if (n < 0) error("ERROR reading from socket");
     if (strcmp(pass,buffer)!=0) {
+        printf("%s %s",pass,buffer);
         n=-1;
         write(newsockfd,&n,4);
         status^=8;
@@ -154,12 +162,12 @@ bool checker(char* username) {
     }
     status|=16;
     auth_cl=dbase2[n+40]; //if ch=-1 (int) ch == ?
-    if (auth_cl&(-16)==(-16)) {
-        sendall();
-    }
-    else {
-        sendone();
-    }
+    // if (auth_cl&(-16)==(-16)) {
+    //     sendall();
+    // }
+    // else {
+    //     sendone();
+    // }
     return true;
 }
 
@@ -229,12 +237,6 @@ int main(int argc, char *argv[])
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(portno);
-    if (bind(sockfd, (struct sockaddr *) &serv_addr,
-            sizeof(serv_addr)) < 0) 
-            error("ERROR on binding");
-    listen(sockfd,5);
-    printf("Server is ON\n");
-    status|=2;  // need to check
 
     db1 = fopen("student_marks","r+b");
     if (db1==NULL) {
@@ -254,10 +256,48 @@ int main(int argc, char *argv[])
     fseek(db2, 0L, SEEK_SET);
     fread(dbase2,res2,1,db2);
     status|=4;
+    printf("database is loaded\n");
+
+    if (bind(sockfd, (struct sockaddr *) &serv_addr,
+            sizeof(serv_addr)) < 0) 
+            error("ERROR on binding");
+    listen(sockfd,5);
+    printf("Server is ON\n");
+    status|=2;  // need to check
+
 
     // adduser("instructor2","adminpass2",-2);
     // addstudent("K Dinesh Reddy",99.05,98.61,90.86,99.99,96.30);
-    //server();
+    bool run=true;
+    char s;
+    while (run) {
+        switch (status>>3) {
+            case (0):
+            printf("ready for connection\n");
+            connection();
+            printf("connection made\n");
+            printf("ready for authentication\n");
+            fflush(stdout);
+            checker(buffer); // need to change
+            printf("authen happen\n");
+            break;
+            case (1):
+            printf("ready for authentication\n");
+            fflush(stdout);
+            checker(); // need to change
+            printf("authen happen\n");
+            break;
+            case(3):
+            commands();
+            break;
+            default:
+            error("Something went wrong\n");
+        }
+        while (s=getchar()=='e') {
+            printf("its working");
+            run=false;
+        }
+    }
     closing();
     return 0; 
 }

@@ -92,9 +92,40 @@ int addstudent(char* name,float s1,float s2,float s3,float s4,float s5) {
     return auth;
 }
 
-// void update(FILE* fp,int n,char change[]) {
+bool sendall() {
+    int x=htonl(res1);
+    int n;
+    n=write(newsockfd,&x,4);
+    if (n<0){error("error in sendall");}
+    int st=0;
+    while (st<res1){
+        n=write(newsockfd,dbase1,res1);
+        if (n<0){error("error in sendall");}
+        st+=n;
+    }
+    return true;
+}
 
-// }
+bool sendone(){
+    int pos=(auth_cl-1)*41;
+    int n;
+    n=write(newsockfd,dbase1+pos,41);
+    if (n<0){error("error in sendone");}
+
+}
+
+void update(int n,char change[]) {
+    short* ptr=(short*) change;
+    int pos=30+ (n-1)*41;
+    for (int i=0;i<10;i+=2) {
+        fseek(db1,pos+i,SEEK_SET);
+        if (*ptr!=-1) {
+            fwrite(ptr,2,1,db1);
+            memcpy(dbase1,ptr,2);
+        }
+        ptr++;
+    }
+}
 
 void encrypt(char password[],int key){
     for (int i=0;i<strlen(password);i++) {
@@ -108,14 +139,27 @@ void decrypt(char password[],int key){
 }
 
 void commands() {
-    "y";
+    bzero(buffer,256);
+    int n=read(newsockfd,buffer,255);
+    if (n<0){
+        error("error reading command");
+    }
+    if (n==0) {
+        status&=7;
+        close(newsockfd);
+    }
+    if(buffer[0]==-1){
+        update(buffer[1],buffer+2);
+    }
+    else {
+        close(newsockfd);
+    }
 }
 
 int search(char* username) {
     int x=0;
     printf("search start");
     while (x<res2) {
-        printf("%s %s %d",dbase2+x,username,strcmp(dbase2+x,username));
         if (strcmp(dbase2+x,username)==0){
             return x;
         }
@@ -125,6 +169,7 @@ int search(char* username) {
 }
 
 bool checker() {
+    bzero(buffer,256);
     int rnd=read(newsockfd,buffer,20);
     if (rnd<0){error("error while reading");return false;}
     printf("%s",buffer);
@@ -162,12 +207,14 @@ bool checker() {
     }
     status|=16;
     auth_cl=dbase2[n+40]; //if ch=-1 (int) ch == ?
-    // if (auth_cl&(-16)==(-16)) {
-    //     sendall();
-    // }
-    // else {
-    //     sendone();
-    // }
+    if (auth_cl&(-16)==(-16)) {
+        sendall();
+    }
+    else {
+        sendone();
+        close(newsockfd);
+        status&=7;
+    }
     return true;
 }
 
@@ -180,42 +227,6 @@ void connection() {
         error("ERROR on accept");
     bzero(buffer,256);
     status|=8;
-}
-
-void server() {
-    bool run=true;
-    char s;
-    while (run) {
-        switch (status>>3) {
-            case (0):
-            connection();
-            break;
-            case (1):
-            checker(buffer); // need to change
-            break;
-            case(3):
-            commands();
-            break;
-            default:
-            error("Something went wrong");
-        }
-        while ((s=getchar())!=EOF) {
-            if (s=='e') run=false;
-        }
-    }
-    closing();
-}
-
-void userview() {
-    int n;
-    while (true) {
-        n = read(newsockfd,buffer,255);
-        if (n < 0) error("ERROR reading from socket");
-        char* username = buffer;
-        bool ch = checker(username);
-        n = write(newsockfd,"I got your message",18);
-        if (n < 0) error("ERROR writing to socket");
-    }
 }
 
 int main(int argc, char *argv[])
@@ -268,35 +279,28 @@ int main(int argc, char *argv[])
 
     // adduser("instructor2","adminpass2",-2);
     // addstudent("K Dinesh Reddy",99.05,98.61,90.86,99.99,96.30);
-    bool run=true;
+    int run=3;
     char s;
-    while (run) {
-        switch (status>>3) {
-            case (0):
+    while (run--) {
+        printf("hi");
+        printf("%d",status);
+        while (!(status&8)) {
             printf("ready for connection\n");
             connection();
             printf("connection made\n");
+        }
+        while (status&8 && !(status&16)) {
             printf("ready for authentication\n");
-            fflush(stdout);
-            checker(buffer); // need to change
-            printf("authen happen\n");
-            break;
-            case (1):
-            printf("ready for authentication\n");
-            fflush(stdout);
             checker(); // need to change
             printf("authen happen\n");
-            break;
-            case(3):
+        }
+        while (status&16) {
             commands();
-            break;
-            default:
-            error("Something went wrong\n");
         }
-        while (s=getchar()=='e') {
-            printf("its working");
-            run=false;
-        }
+        // if (getchar()=='e') {
+        //     closing();
+        //     return 0;
+        // }
     }
     closing();
     return 0; 

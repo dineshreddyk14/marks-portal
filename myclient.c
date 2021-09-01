@@ -31,11 +31,15 @@ void encrypt(char password[],int key){
 void initialMenu();
 
 void receiveAll(int k){
+    printf("reached receive all");
     int st=0;
     while(st < k){
+        printf("read start");
         n = read(sockfd,database+st,2000);
         if(n < 0 ) error("ERROR reading database reply from socket");
+        if (n==0) {printf("n==0");return;}
         st+=n;
+        printf("read end");
     }
 }
 
@@ -60,7 +64,7 @@ void studentlogin(){
     if(cas == 1){
         printf("Your subject wise scores:\n");
         for(int i=0;i<5;i++){
-            printf("Subject %d: %.2f\n",i+1,markslist[i]/100);
+            printf("Subject %d: %.2f\n",i+1,markslist[i]/100.0);
         }
     }else if(cas == 2){
         printf("Your aggregate score is ");
@@ -68,7 +72,7 @@ void studentlogin(){
         for(int i=0;i<5;i++){
             ag+=markslist[i];
         }
-        printf("%.2f\n",ag/500);
+        printf("%.2f\n",ag/500.0);
     }else if(cas == 3){
         int max=0;
         int min=0;
@@ -84,7 +88,7 @@ void studentlogin(){
 
 void instructorlogin(int k){
     printf("Your available options:\n");
-    printf("1. Marks (individual and aggregate percentage) of each student\n2. Class average\n3. Number of students failed (passing percentage 33.33%) in each subject\n4. Name of best and worst performing students\n5. Update student marks\n6. Logout");
+    printf("1. Marks (individual and aggregate percentage) of each student\n2. Class average\n3. Number of students failed (passing percentage 33.33) in each subject\n4. Name of best and worst performing students\n5. Update student marks\n6. Logout");
     printf("Enter suitable number: ");
     int cas;
     scanf("%d",&cas);
@@ -108,10 +112,10 @@ void instructorlogin(int k){
         for(int j=0;j<i;j++){
             int ag=0;
             for(int k=0;k<5;k++){
-                printf("%.2f ",markslist[j][k]/100);
+                printf("%.2f ",markslist[j][k]/100.0);
                 ag+=markslist[j][k];
             }
-            printf("%.2f %s\n",ag/500,database+j*41);
+            printf("%.2f %s\n",ag/500.0,database+j*41);
         }
     }else if(cas == 2){
         printf("Class average in each subject is presented\n");
@@ -120,7 +124,7 @@ void instructorlogin(int k){
             for(int j=0;j<i;j++){
                 av+=markslist[j][k];
             }
-            printf("Subject %d: %.2f\n",k+1,av/(i*100));
+            printf("Subject %d: %.2f\n",k+1,av/(i*100.0));
         }
     }else if(cas == 3){
         printf("Number of students failed (passing percentage 33.33) in each subject is presented");
@@ -168,7 +172,7 @@ void instructorlogin(int k){
         printf("Selected student name: %s",database+(st*41));
         printf("Subjectwise marks of selected student in order subject 1, 2, 3, 4 and 5:\n");
         for(int k=0;k<5;k++){
-            printf("%f\n",markslist[st][k]/100);
+            printf("%f\n",markslist[st][k]/100.0);
         }
         printf("Select the subject that need to be updated: ");
         int sb;
@@ -196,7 +200,10 @@ void checkpassword(int key){
     //Sending encrypted password to server
     bzero(buffer,256);
     printf("Enter your password: \n");
+    // getc(stdin);
+
     fgets(buffer,255,stdin);
+    printf("read complete %syo",buffer);
     encrypt(buffer,key);
     n = write(sockfd,buffer,strlen(buffer)-1);
     if (n < 0) 
@@ -215,7 +222,7 @@ void checkpassword(int key){
     int k = ntohl(*(int*)buffer);
 
     receiveAll(k);
-
+    printf("%d",k);
     if(k==41){
         printf("Succesfully logged in as a student\n");
         studentlogin();
@@ -230,17 +237,19 @@ void checkusername(){
 
     //Sending username to server
     bzero(buffer,256);
-    printf("Enter Username: ");
+    printf("Enter Username: \n");
     fgets(buffer,20,stdin);
+    printf("read complete\nthis is it%s",buffer);
     n = write(sockfd,buffer,strlen(buffer)-1);
     if (n < 0) 
          error("ERROR writing username to socket");
-
+    printf("write complete");
     //Reading the reply from server
     bzero(buffer,256);
     n = read(sockfd,buffer,255);
     if (n < 0) 
         error("ERROR reading username reply from socket");
+    printf("%s",buffer);
     int key = ntohl(*(int*)buffer);
     if(key==-1){
         error("Username doesn't exist");
@@ -249,9 +258,13 @@ void checkusername(){
 }
 
 void initialMenu(){
-    printf("1.Login\n2.Exit\nEnter either 1 or 2\n");
+    printf("1.Login\n2.Exit\nEnter either 1 or 2 :");
     int cas;
+    printf("read start");
+
     scanf("%d",&cas);
+    getc(stdin);
+    printf("read complete\n");
     if(cas==2)exit(1); //exit
     checkusername();
 }

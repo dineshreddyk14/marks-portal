@@ -107,8 +107,14 @@ bool sendall() {
 }
 
 bool sendone(){
+    printf("reached send one");
     int pos=(auth_cl-1)*41;
+    int x=htonl(41l);
+
     int n;
+    n=write(newsockfd,&x,4);
+    if (n<0){error("error in sendone");}
+
     n=write(newsockfd,dbase1+pos,41);
     if (n<0){error("error in sendone");}
 
@@ -170,6 +176,7 @@ int search(char* username) {
 
 bool checker() {
     bzero(buffer,256);
+    printf("yo waiting");
     int rnd=read(newsockfd,buffer,20);
     if (rnd<0){error("error while reading");return false;}
     printf("%s",buffer);
@@ -207,7 +214,7 @@ bool checker() {
     }
     status|=16;
     auth_cl=dbase2[n+40]; //if ch=-1 (int) ch == ?
-    if (auth_cl&(-16)==(-16)) {
+    if ((auth_cl&(-16))==(-16)) {
         sendall();
     }
     else {
@@ -225,7 +232,6 @@ void connection() {
                 &clilen);
     if (newsockfd < 0) 
         error("ERROR on accept");
-    bzero(buffer,256);
     status|=8;
 }
 
@@ -282,19 +288,18 @@ int main(int argc, char *argv[])
     int run=3;
     char s;
     while (run--) {
-        printf("hi");
-        printf("%d",status);
-        while (!(status&8)) {
+        if (!(status&8)) {
             printf("ready for connection\n");
             connection();
             printf("connection made\n");
         }
-        while (status&8 && !(status&16)) {
+        if (status&8 && !(status&16)) {
             printf("ready for authentication\n");
+            fflush(stdout);
             checker(); // need to change
             printf("authen happen\n");
         }
-        while (status&16) {
+        if (status&16) {
             commands();
         }
         // if (getchar()=='e') {

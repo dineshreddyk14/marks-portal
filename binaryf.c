@@ -68,22 +68,27 @@ int addstudent(char* name,short s1,short s2,short s3,short s4,short s5) {
 int main() {
     
     srand(time(0));
+
     freopen("names.txt","r",stdin);
     db1 = fopen("student_marks","w+b");
     if (db1==NULL) {
         printf("Error in loading database");
     }
+    printf("db1");
     db2 = fopen("user_pass","w+b");
     if (db2==NULL){
         fclose(db1);
         printf("Error in loading database");
     }
-    fseek(db1, 0L, SEEK_END);
-    res1 = ftell(db1);
+    printf("db1");
+    fflush(stdout);
+    res1=0,res2=0;
+    // fseek(db1, 0L, SEEK_END);
+    // res1 = ftell(db1);
     // fseek(db1, 0L, SEEK_SET);
     // fread(dbase1,res1,1,db1);
-    fseek(db2, 0L, SEEK_END);
-    res2 = ftell(db2);
+    // fseek(db2, 0L, SEEK_END);
+    // res2 = ftell(db2);
     // fseek(db2, 0L, SEEK_SET);
     // fread(dbase2,res2,1,db2);
     adduser("instructor","adminpass",-1);
@@ -93,7 +98,7 @@ int main() {
     for (int i=0;i<24;i++) {
         sprintf(username,"student%d",i+1);
         sprintf(password,"password%d",i+1);
-        gets(name);
+        fgets(name,30,stdin);
         for (int j=0;j<5;j++){
             a[j]=(RAND_MAX-rand())%10000;
         }

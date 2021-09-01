@@ -93,6 +93,7 @@ int addstudent(char* name,float s1,float s2,float s3,float s4,float s5) {
 }
 
 bool sendall() {
+    printf("reached sendall");
     int x=htonl(res1);
     int n;
     n=write(newsockfd,&x,4);
@@ -103,6 +104,7 @@ bool sendall() {
         if (n<0){error("error in sendall");}
         st+=n;
     }
+    printf("completed send all");
     return true;
 }
 
@@ -121,13 +123,16 @@ bool sendone(){
 }
 
 void update(int n,char change[]) {
+    printf("update called for %d\n",n);
     short* ptr=(short*) change;
     int pos=30+ (n-1)*41;
     for (int i=0;i<10;i+=2) {
         fseek(db1,pos+i,SEEK_SET);
-        if (*ptr!=-1) {
+        printf("%d %d\n",pos+i,ntohs(*ptr));
+        if (ntohs(*ptr)!=65535) {
             fwrite(ptr,2,1,db1);
             memcpy(dbase1,ptr,2);
+            printf("update worked");
         }
         ptr++;
     }
@@ -180,9 +185,9 @@ bool checker() {
     int rnd=read(newsockfd,buffer,20);
     if (rnd<0){error("error while reading");return false;}
     printf("%s",buffer);
-    int n = search(buffer);
-    if (n<0) {
-        write(newsockfd,&n,4);
+    int entry = search(buffer);
+    if (entry<0) {
+        write(newsockfd,&entry,4);
         status^=8;
         close(newsockfd);
         return false;
@@ -191,7 +196,7 @@ bool checker() {
     char x=0xff;
     int key=11; //make a random number
     char pass[20];
-    memcpy(pass,dbase2+n+20,20);
+    memcpy(pass,dbase2+entry+20,20);
     key&=(1<<24)-1;
     encrypt(pass,key);
     key=htonl(key);
@@ -202,7 +207,7 @@ bool checker() {
     printf("send complete");
     fflush(stdout);
     bzero(buffer,256);
-    n = read(newsockfd,buffer,20);
+    int n = read(newsockfd,buffer,20);
     if (n < 0) error("ERROR reading from socket");
     if (strcmp(pass,buffer)!=0) {
         printf("%s %s",pass,buffer);
@@ -213,7 +218,7 @@ bool checker() {
         return false;
     }
     status|=16;
-    auth_cl=dbase2[n+40]; //if ch=-1 (int) ch == ?
+    auth_cl=dbase2[entry+40]; //if ch=-1 (int) ch == ?
     if ((auth_cl&(-16))==(-16)) {
         sendall();
     }

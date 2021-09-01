@@ -35,6 +35,7 @@ void receiveAll(int k){
     int st=0;
     while(st < k){
         printf("read start");
+        if (st!=0 && st<k){printf("%d %d",st,k);return;}
         n = read(sockfd,database+st,2000);
         if(n < 0 ) error("ERROR reading database reply from socket");
         if (n==0) {printf("n==0");return;}
@@ -58,7 +59,7 @@ void studentlogin(){
 
     short markslist[5];
     for(int i=0;i<5;i++){
-        markslist[i] = ntohs(*(short*)database+(30+(2*i)));
+        markslist[i] = ntohs(*(short*)(database+(30+(2*i))));
     }
 
     if(cas == 1){
@@ -169,10 +170,10 @@ void instructorlogin(int k){
         scanf("%d",&st);
         if(st<1 || st>i)error("Invalid entry");
         buffer[1]=st;
-        printf("Selected student name: %s",database+(st*41));
+        printf("Selected student name: %s",database+((st-1)*41));
         printf("Subjectwise marks of selected student in order subject 1, 2, 3, 4 and 5:\n");
         for(int k=0;k<5;k++){
-            printf("%f\n",markslist[st][k]/100.0);
+            printf("%f\n",markslist[st-1][k]/100.0);
         }
         printf("Select the subject that need to be updated: ");
         int sb;
@@ -185,8 +186,8 @@ void instructorlogin(int k){
         printf("Enter updated marks: ");
         float mk;
         scanf("%f",&mk);
-        *x=htons((short)mk*100);
-        n = write(sockfd,buffer,strlen(buffer)-1);
+        *x=htons((short)(mk*100));
+        n = write(sockfd,buffer,12);
         if (n < 0) 
             error("ERROR writing updated marks to socket");
         printf("Succesfully updated!");
@@ -295,7 +296,7 @@ int main(int argc, char *argv[])
     
 
     //Real processing starts here
-
+    bzero(database,2000);
     //Initial menu
     initialMenu();
 

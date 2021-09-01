@@ -26,6 +26,7 @@ void adduser(char* username,char* password,char auth) {
         printf("limit exceeded");
     }
     memcpy(buff+20,password,n);
+    // printf("%d\n",auth);
     buff[40]=auth;
     fwrite(buff,41,1,db2);
     // memcpy(dbase2+res2,buff,41);
@@ -58,6 +59,7 @@ int addstudent(char* name,short s1,short s2,short s3,short s4,short s5) {
     memcpy(buff+38,&xs,2);
 
     char auth = 1+(res1/41);
+    // printf("%d\n",auth);
     buff[40]=auth;
     fwrite(buff,41,1,db1);
     // memcpy(dbase1+res1,buff,41);
@@ -70,6 +72,7 @@ int main() {
     srand(time(0));
 
     freopen("names.txt","r",stdin);
+    freopen("dump.txt","w",stdout);
     db1 = fopen("student_marks","w+b");
     if (db1==NULL) {
         printf("Error in loading database");
@@ -80,7 +83,7 @@ int main() {
         fclose(db1);
         printf("Error in loading database");
     }
-    printf("db1");
+    printf("db1\n");
     fflush(stdout);
     res1=0,res2=0;
     // fseek(db1, 0L, SEEK_END);
@@ -91,8 +94,8 @@ int main() {
     // res2 = ftell(db2);
     // fseek(db2, 0L, SEEK_SET);
     // fread(dbase2,res2,1,db2);
-    adduser("instructor","adminpass",-1);
-    adduser("instructor2","adminpass2",-2);
+    adduser("instructor","adminpass",(char)-1);
+    adduser("instructor2","adminpass2",(char)-2);
     char* name,*password,*username;
     short a[5];
     for (int i=0;i<24;i++) {
@@ -100,7 +103,8 @@ int main() {
         sprintf(password,"password%d",i+1);
         fgets(name,30,stdin);
         for (int j=0;j<5;j++){
-            a[j]=(RAND_MAX-rand())%10000;
+            a[j]=(rand())%10000;
+            printf("%d\n",a[j]);
         }
         char auth= addstudent(name,a[0],a[1],a[2],a[3],a[4]);
         adduser(username,password,auth);

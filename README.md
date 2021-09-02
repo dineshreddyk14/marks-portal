@@ -11,10 +11,10 @@ To run:
 Compiler used: Windows cygwin gcc
 
 ## Files list:
-**myclient.c** – contain client code
-**myserver.c** – contain server code
-**student_marks** – contain subject wise marks of 24 students
-**user_pass** – contain usernames and passwords of 24 students and two instructors
+* **myclient.c** – contain client code
+* **myserver.c** – contain server code
+* **student_marks** – contain subject wise marks of 24 students
+* **user_pass** – contain usernames and passwords of 24 students and two instructors
 
 ## Instructors login info:
 | Username | Password |
@@ -49,3 +49,4 @@ Compiler used: Windows cygwin gcc
 | 22. | THANOS | student22 | password22 |
 | 23. | Salman Khan | student23 | password23 |
 | 24. | Aamir Khan | student24 | password24 |
+

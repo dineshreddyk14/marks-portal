@@ -34,9 +34,9 @@ void receiveAll(int k){
     printf("reached receive all");
     int st=0;
     while(st < k){
-        printf("read start");
-        if (st!=0 && st<k){printf("%d %d",st,k);return;}
-        n = read(sockfd,database+st,2000);
+        printf("read start %d\n",st);
+        // if (st!=0 && st<k){printf("%d %d",st,k);return;}
+        n = read(sockfd,database+st,k-st);
         if(n < 0 ) error("ERROR reading database reply from socket");
         if (n==0) {printf("n==0");return;}
         st+=n;
@@ -51,7 +51,7 @@ void studentlogin(){
 
     int cas;
     scanf("%d",&cas);
-
+    getc(stdin);
     if(cas==4){
         printf("Succesfully logged out\n");
         exit(0);
@@ -93,7 +93,7 @@ void instructorlogin(int k){
     printf("Enter suitable number: ");
     int cas;
     scanf("%d",&cas);
-
+    getc(stdin);
     if(cas==6){
         printf("Succesfully logged out\n");
         exit(0);
@@ -212,7 +212,8 @@ void checkpassword(int key){
     
     //Reading the reply from server
     bzero(buffer,256);
-    n = read(sockfd,buffer,255);
+    n = read(sockfd,buffer,4);
+    printf("%d\n",n);
     if (n < 0) 
         error("ERROR reading password reply from socket");
     if(n == 0){

@@ -100,9 +100,10 @@ bool sendall() {
     if (n<0){error("error in sendall");}
     int st=0;
     while (st<res1){
-        n=write(newsockfd,dbase1,res1);
+        n=write(newsockfd,dbase1+st,res1-st);
         if (n<0){error("error in sendall");}
         st+=n;
+        printf("%d %d\n",st,n);
     }
     printf("completed send all");
     return true;
@@ -212,7 +213,7 @@ bool checker() {
     if (strcmp(pass,buffer)!=0) {
         printf("%s %s",pass,buffer);
         n=-1;
-        write(newsockfd,&n,4);
+        // write(newsockfd,&n,4);
         status^=8;
         close(newsockfd);
         return false;

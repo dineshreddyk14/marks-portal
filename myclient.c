@@ -191,6 +191,8 @@ void instructorlogin(int k){
         if (n < 0) 
             error("ERROR writing updated marks to socket");
         printf("Succesfully updated!");
+        short* y=(short*) (database+(st-1)*41+30+(sb-1)*2);
+        *y=*x;
     }
     instructorlogin(k);
 }

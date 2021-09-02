@@ -132,7 +132,7 @@ void update(int n,char change[]) {
         printf("%d %d\n",pos+i,ntohs(*ptr));
         if (ntohs(*ptr)!=65535) {
             fwrite(ptr,2,1,db1);
-            memcpy(dbase1,ptr,2);
+            memcpy(dbase1+pos+i,ptr,2);
             printf("update worked");
         }
         ptr++;

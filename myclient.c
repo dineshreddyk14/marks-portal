@@ -47,9 +47,11 @@ void studentlogin(){
     printf("1. Marks in each subject\n2. Aggregate percentage\n3. Subjects with maximum and minimum marks\n4. Logout\n");
     printf("\nEnter suitable number: ");
 
-    int cas;
-    scanf("%d",&cas);
-    // getc(stdin);
+    int cas=0;
+    while (cas==0) {
+        scanf("%d",&cas);
+    }
+    getc(stdin);
 
     if(cas<1 || cas>4) error("Invalid entry");
 
@@ -93,11 +95,13 @@ void instructorlogin(int k){
     printf("Your available options:\n");
     printf("1. Marks (individual and aggregate percentage) of each student\n2. Class average\n3. Number of students failed (passing percentage 33.33) in each subject\n4. Name of best and worst performing students\n5. Update student marks\n6. Logout\n\n");
     printf("Enter suitable number: ");
-    int cas;
-    scanf("%d",&cas);
+    int cas=0;
+    while (cas==0) {
+        scanf("%d",&cas);
+    }
     getc(stdin);
 
-    if(cas<1 || cas>6)error("Invalid entry");
+    if(cas<1 || cas>6){error("Invalid entry");}
 
     if(cas==6){
         printf("\nSuccesfully logged out\n");
@@ -171,8 +175,10 @@ void instructorlogin(int k){
             printf("%d. %s",j+1,database+j*41);
         }
         printf("\n\nEnter the student number: ");
-        int st;
-        scanf("%d",&st);
+        int st=0;
+        while (st==0) {
+            scanf("%d",&st);
+        }
         if(st<1 || st>i)error("Invalid entry");
         buffer[1]=st;
         printf("\nSelected student name: %s\n",database+((st-1)*41));
@@ -181,8 +187,10 @@ void instructorlogin(int k){
             printf("Subject %d:  %.2f\n",k+1,markslist[st-1][k]/100.0);
         }
         printf("\nSelect the subject that need to be updated: ");
-        int sb;
-        scanf("%d",&sb);
+        int sb=0;
+        while (sb==0) {
+            scanf("%d",&sb);
+        }
         if(sb>5 || sb<1){
             error("Invalid entry");
         }
@@ -271,8 +279,10 @@ void checkusername(){
 
 void initialMenu(){
     printf("1.Login\n2.Exit\n\nEnter either 1 or 2: ");
-    int cas;
-    scanf("%d",&cas);
+    int cas=0;
+    while (cas==0) {
+        scanf("%d",&cas);
+    }
     getc(stdin);
     printf("Succesfully read input for initial menu\n\n");
     if(cas!=1 && cas!=2)error("Invalid input");

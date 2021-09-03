@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
             checker(); // need to change
             printf("authen happen\n");
         }
-        if (status&16) {
+        while (status&16) {
             commands();
         }
         // if (getchar()=='e') {
